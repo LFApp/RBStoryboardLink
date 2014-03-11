@@ -1,7 +1,7 @@
-//
+
 // RBStoryboardLink.h
 //
-// Copyright (c) 2012-2014 Robert Brown
+// Copyright (c) 2012 Robert Brown
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@
 @interface RBStoryboardLink : UIViewController
 
 /// The contained UIViewController from the destination view controller.
-@property (nonatomic, strong, readonly) UIViewController * scene;
+@property (nonatomic, strong, readonly) id scene;
 
 /// The name of the storyboard that should be linked.
 /// This should be set in the Interface Builder identity inspector.

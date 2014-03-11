@@ -1,7 +1,7 @@
 //
 // RBStoryboardLink.m
 //
-// Copyright (c) 2012-2014 Robert Brown
+// Copyright (c) 2012 Robert Brown
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,17 +23,19 @@
 //
 
 #import "RBStoryboardLink.h"
-#import "RBStoryboardLinkSource.h"
-
 
 @interface RBStoryboardLink ()
 
-@property (nonatomic, strong, readwrite) UIViewController * scene;
+@property (nonatomic, strong, readwrite) id scene;
 
 @end
 
 
 @implementation RBStoryboardLink
+
+@synthesize storyboardName  = _storyboardName;
+@synthesize sceneIdentifier = _sceneIdentifier;
+@synthesize scene           = _scene;
 
 - (void)awakeFromNib {
     [super awakeFromNib];
@@ -55,6 +57,24 @@
              self.sceneIdentifier);
     
     self.scene = scene;
+    
+    // Adjusts the frame of the child view.
+    CGRect frame = self.view.frame;
+    CGRect linkedFrame = scene.view.frame;
+    linkedFrame.origin.x -= frame.origin.x;
+    linkedFrame.origin.y -= frame.origin.y;
+    
+    // The scene's main view must be made flexible so it will resize properly
+    // in the container.
+    scene.view.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                                   UIViewAutoresizingFlexibleHeight);
+    
+    scene.view.frame = linkedFrame;
+    
+    // Adds the view controller as a child view.
+    [self addChildViewController:scene];
+    [self.view addSubview:scene.view];
+    [scene didMoveToParentViewController:self];
     
     // Grabs the UINavigationItem stuff.
     UINavigationItem * navItem = self.navigationItem;
@@ -80,6 +100,7 @@
     UIBarButtonItem * linkedEditButton = scene.editButtonItem;
     
     if (linkedEditButton) {
+        
         editButton.enabled = linkedEditButton.enabled;
         editButton.image = linkedEditButton.image;
         editButton.landscapeImagePhone = linkedEditButton.landscapeImagePhone;
@@ -103,101 +124,14 @@
     self.providesPresentationContextTransitionStyle = scene.providesPresentationContextTransitionStyle;
     
     // Grabs the popover properties.
-    self.preferredContentSize = scene.preferredContentSize;
+    self.contentSizeForViewInPopover = scene.contentSizeForViewInPopover;
     self.modalInPopover = scene.modalInPopover;
     
     // Grabs miscellaneous properties.
     self.title = scene.title;
     self.hidesBottomBarWhenPushed = scene.hidesBottomBarWhenPushed;
     self.editing = scene.editing;
-    
-    // Translucent bar properties.
-    self.automaticallyAdjustsScrollViewInsets = scene.automaticallyAdjustsScrollViewInsets;
-    self.edgesForExtendedLayout = scene.edgesForExtendedLayout;
-    self.extendedLayoutIncludesOpaqueBars = scene.extendedLayoutIncludesOpaqueBars;
-    self.modalPresentationCapturesStatusBarAppearance = scene.modalPresentationCapturesStatusBarAppearance;
-    self.transitioningDelegate = scene.transitioningDelegate;
-}
-
-- (NSString *)vertialConstraintString {
-    
-    // Defaults to using top and bottom layout guides.
-    BOOL needsTopLayoutGuide = YES;
-    BOOL needsBottomLayoutGuide = YES;
-    
-    if ([self.scene conformsToProtocol:@protocol(RBStoryboardLinkSource)]) {
-        id<RBStoryboardLinkSource> source = (id<RBStoryboardLinkSource>)self.scene;
-        
-        if ([source respondsToSelector:@selector(needsTopLayoutGuide)])
-            needsTopLayoutGuide = [source needsTopLayoutGuide];
-        
-        if ([source respondsToSelector:@selector(needsBottomLayoutGuide)])
-            needsBottomLayoutGuide = [source needsBottomLayoutGuide];
-    }
-    
-    if (needsTopLayoutGuide && needsBottomLayoutGuide)
-        return @"V:[topGuide][view][bottomGuide]";
-    else if (needsTopLayoutGuide)
-        return @"V:[topGuide][view]|";
-    else if (needsBottomLayoutGuide)
-        return @"V:|[view][bottomGuide]";
-    else
-        return @"V:|[view]|";
-}
-
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    
-    // Adds the view controller as a child view.
-    UIViewController * scene = self.scene;
-    [self addChildViewController:scene];
-    [self.view addSubview:scene.view];
-    [self.scene didMoveToParentViewController:self];
-    
-    scene.view.translatesAutoresizingMaskIntoConstraints = NO;
-    
-    NSDictionary * views = @{
-                             @"topGuide"    : self.topLayoutGuide,
-                             @"bottomGuide" : self.bottomLayoutGuide,
-                             @"view"        : scene.view,
-                             };
-    
-    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[view]|"
-                                                                      options:0
-                                                                      metrics:nil
-                                                                        views:views]];
-    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:[self vertialConstraintString]
-                                                                      options:0
-                                                                      metrics:nil
-                                                                        views:views]];
-}
-
-- (void)viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-    
-    if ([self.scene isKindOfClass:[UINavigationController class]] || [self.scene isKindOfClass:[UITabBarController class]])
-        [self.scene viewWillAppear:animated];
-}
-
-- (void)viewDidAppear:(BOOL)animated {
-    [super viewDidAppear:animated];
-    
-    if ([self.scene isKindOfClass:[UINavigationController class]] || [self.scene isKindOfClass:[UITabBarController class]])
-        [self.scene viewDidAppear:animated];
-}
-
-- (void)viewWillDisappear:(BOOL)animated {
-    [super viewWillDisappear:animated];
-    
-    if ([self.scene isKindOfClass:[UINavigationController class]] || [self.scene isKindOfClass:[UITabBarController class]])
-        [self.scene viewWillDisappear:animated];
-}
-
-- (void)viewDidDisappear:(BOOL)animated {
-    [super viewDidDisappear:animated];
-    
-    if ([self.scene isKindOfClass:[UINavigationController class]] || [self.scene isKindOfClass:[UITabBarController class]])
-        [self.scene viewDidDisappear:animated];
+    self.wantsFullScreenLayout = scene.wantsFullScreenLayout;
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation {
@@ -206,56 +140,20 @@
     return [self.scene shouldAutorotateToInterfaceOrientation:toInterfaceOrientation];
 }
 
-- (BOOL)shouldAutorotate {
-    
-    // The linked scene defines autorotate.
-    return [self.scene shouldAutorotate];
+- (BOOL)canPerformUnwindSegueAction:(SEL)action fromViewController:(UIViewController *)fromViewController withSender:(id)sender
+{
+    BOOL b = [self.scene canPerformUnwindSegueAction:action fromViewController:fromViewController withSender: sender];
+    return b;
 }
 
-- (NSUInteger)supportedInterfaceOrientations {
-    
-    // The linked scene defines supported orientations.
-    return [self.scene supportedInterfaceOrientations];
-}
-
-- (UIViewController *)childViewControllerForStatusBarStyle {
-    return self.scene;
-}
-
-- (UIViewController *)childViewControllerForStatusBarHidden {
-    return self.scene;
-}
-
-- (UIStatusBarAnimation)preferredStatusBarUpdateAnimation {
-    return [self.scene preferredStatusBarUpdateAnimation];
-}
-
-- (BOOL)prefersStatusBarHidden {
-    return [self.scene prefersStatusBarHidden];
+- (id)forwardingTargetForSelector:(SEL)aSelector
+{
+    if ([self.scene respondsToSelector:aSelector]) {
+        return self.scene;
+    }
+    return [super forwardingTargetForSelector:aSelector];
 }
 
 
-#pragma mark - Message forwarding
-
-// The following methods are important to get unwind segues to work properly.
-
-- (BOOL)respondsToSelector:(SEL)aSelector {
-    return ([super respondsToSelector:aSelector] ||
-            [self.scene respondsToSelector:aSelector]);
-}
-
-- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector {
-    return ([super methodSignatureForSelector:aSelector]
-            ?:
-            [self.scene methodSignatureForSelector:aSelector]);
-}
-
-- (void)forwardInvocation:(NSInvocation *)anInvocation {
-    
-    if ([self.scene respondsToSelector:[anInvocation selector]])
-        [anInvocation invokeWithTarget:self.scene];
-    else
-        [super forwardInvocation:anInvocation];
-}
 
 @end
