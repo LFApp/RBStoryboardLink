@@ -124,14 +124,14 @@
     self.providesPresentationContextTransitionStyle = scene.providesPresentationContextTransitionStyle;
     
     // Grabs the popover properties.
-    self.contentSizeForViewInPopover = scene.contentSizeForViewInPopover;
+    self.preferredContentSize = scene.preferredContentSize;
     self.modalInPopover = scene.modalInPopover;
     
     // Grabs miscellaneous properties.
     self.title = scene.title;
     self.hidesBottomBarWhenPushed = scene.hidesBottomBarWhenPushed;
     self.editing = scene.editing;
-    self.wantsFullScreenLayout = scene.wantsFullScreenLayout;
+    self.edgesForExtendedLayout = scene.edgesForExtendedLayout;
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation {
